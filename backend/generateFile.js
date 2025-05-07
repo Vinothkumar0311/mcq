@@ -4,17 +4,27 @@ const { v4: uuid } = require("uuid");
 
 const dirCodes = path.join(__dirname, "codes");
 
-// Ensure the directory exists
 if (!fs.existsSync(dirCodes)) {
   fs.mkdirSync(dirCodes, { recursive: true });
 }
 
-const generateFile = async (format, code) => {
+const generateFile = async (language, code) => {
   const jobId = uuid();
-  const filename = `${jobId}.${format}`;
+  let extension = "";
+  if (language === "cpp") {
+    extension = ".cpp";
+  } else if (language === "python") {
+    extension = ".py";
+  } else if (language === "javascript") {
+    extension = ".js";
+  } else if (language === "java") {
+    extension = ".java";
+  }
+
+  const filename = `${jobId}${extension}`;
   const filepath = path.join(dirCodes, filename);
 
-  await fs.promises.writeFile(filepath, code); // write the code to file
+  await fs.promises.writeFile(filepath, code);
 
   return filepath;
 };

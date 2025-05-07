@@ -1,24 +1,23 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs").promises;
+const path = require("path");
 
-const cleanUp = (filepath) => {
+const cleanUp = async (filepath) => {
   try {
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
-    }
-    
-    // For C++ also clean up the compiled binary
-    if (filepath.endsWith('.cpp')) {
-      const outputPath = path.join(__dirname, 'outputs');
-      const jobId = path.basename(filepath).split('.')[0];
-      const outFile = path.join(outputPath, `${jobId}.out`);
-      
-      if (fs.existsSync(outFile)) {
-        fs.unlinkSync(outFile);
-      }
+    const extension = path.extname(filepath);
+    const jobId = path.basename(filepath, extension);
+    const outputPath = path.join(__dirname, "outputs");
+
+    await fs.unlink(filepath);
+
+    if (extension === ".cpp") {
+      const outPath = path.join(outputPath, `${jobId}.out`);
+      await fs.unlink(outPath).catch(() => {});
+    } else if (extension === ".java") {
+      const classPath = path.join(path.dirname(filepath), `${jobId}.class`);
+      await fs.unlink(classPath).catch(() => {});
     }
   } catch (err) {
-    console.error('Cleanup error:', err);
+    console.error(`Cleanup failed for ${filepath}:`, err);
   }
 };
 

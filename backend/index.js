@@ -1,56 +1,65 @@
 const express = require("express");
 const { generateFile } = require("./generateFile");
 const { executeCpp } = require("./executeCpp");
+const { executeJava } = require("./executeJava");
+const { executePython } = require("./executePython");
+const { cleanUp } = require("./cleanup");
 const app = express();
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
-app.get("/", (req, res) => {
-  return res.json({ helo: "world" });
-});
+console.log("Starting server...");
 
-// app.post("/run", async (req, res) => {
-//   const { language = "cpp", code } = req.body;
+try {
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
-//   if (code == undefined) {
-//     return res
-//       .status(400)
-//       .json({ sucess: false, erro: "Empty code has been Submitted" });
-//   }
+  app.get("/", (req, res) => {
+    console.log("Received GET request to /");
+    return res.json({ hello: "world" });
+  });
 
-//   const filepath = await generateFile(language, code);
+  app.post("/run", async (req, res) => {
+    console.log("Received POST request to /run", req.body);
+    const { language = "cpp", code, input } = req.body;
 
-//   const output = await executeCpp(filepath);
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        error: "Empty code has been submitted",
+      });
+    }
 
-//   return res.json({ filepath, output });
-// });
+    let filepath;
+    try {
+      filepath = await generateFile(language, code);
+      let output;
+      if (language === "cpp") {
+        output = await executeCpp(filepath, input);
+      } else if (language === "python") {
+        output = await executePython(filepath, input);
+      } else if (language === "java") {
+        output = await executeJava(filepath, input);
+      } else {
+        return res.status(400).json({ success: false, error: "Invalid Language" });
+      }
+      return res.json({ filepath, output });
+    } catch (err) {
+      console.error("Error during execution:", err);
+      return res.status(500).json({
+        success: false,
+        error: err.error || "Execution failed",
+        stderr: err.stderr || "",
+      });
+    } finally {
+      if (filepath) {
+        console.log("Cleaning up:", filepath);
+        await cleanUp(filepath);
+      }
+    }
+  });
 
-
-app.post("/run", async (req, res) => {
-  const { language = "cpp", code } = req.body;
-
-  if (!code) {
-    return res.status(400).json({
-      success: false,
-      error: "Empty code has been submitted",
-    });
-  }
-
-  try {
-    const filepath = await generateFile(language, code);
-    const output = await executeCpp(filepath);
-    return res.json({ filepath, output });
-  } catch (err) {
-    // Send a JSON response with readable error message
-    return res.status(500).json({
-      success: false,
-      error: err.error || "Execution failed",
-      stderr: err.stderr || "",
-    });
-  }
-});
-
-
-app.listen(5000, () => {
-  console.log("Listening on port 5000");
-});
+  app.listen(5000, () => {
+    console.log("Listening on port 5000");
+  });
+} catch (err) {
+  console.error("Server startup failed:", err);
+}
