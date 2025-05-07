@@ -2,9 +2,10 @@ const { exec } = require("child_process");
 const path = require("path");
 
 const executePython = (filepath, input) => {
+  const normalizedPath = path.normalize(filepath);
   return new Promise((resolve, reject) => {
     const process = exec(
-      `python3 "${filepath}"`,
+      `python "${normalizedPath}"`,
       { timeout: 5000 },
       (error, stdout, stderr) => {
         if (error) {

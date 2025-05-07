@@ -6,11 +6,12 @@ const cleanUp = async (filepath) => {
     const extension = path.extname(filepath);
     const jobId = path.basename(filepath, extension);
     const outputPath = path.join(__dirname, "outputs");
+    const normalizedFilepath = path.normalize(filepath);
 
-    await fs.unlink(filepath);
+    await fs.unlink(normalizedFilepath);
 
     if (extension === ".cpp") {
-      const outPath = path.join(outputPath, `${jobId}.out`);
+      const outPath = path.join(outputPath, `${jobId}.exe`);
       await fs.unlink(outPath).catch(() => {});
     } else if (extension === ".java") {
       const classPath = path.join(path.dirname(filepath), `${jobId}.class`);

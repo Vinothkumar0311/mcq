@@ -10,11 +10,13 @@ if (!fs.existsSync(outputPath)) {
 
 const executeCpp = (filepath, input) => {
   const jobId = path.basename(filepath).split(".")[0];
-  const outPath = path.join(outputPath, `${jobId}.out`);
+  const outPath = path.join(outputPath, `${jobId}.exe`);
+  const normalizedFilepath = path.normalize(filepath);
+  const normalizedOutPath = path.normalize(outPath);
 
   return new Promise((resolve, reject) => {
     const process = exec(
-      `g++ "${filepath}" -o "${outPath}" && cd "${outputPath}" && ./${jobId}.out`,
+      `g++ "${normalizedFilepath}" -o "${normalizedOutPath}" && "${normalizedOutPath}"`,
       { timeout: 5000 },
       (error, stdout, stderr) => {
         if (error) {
