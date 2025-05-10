@@ -1,32 +1,40 @@
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 const { v4: uuid } = require("uuid");
 
-const dirCodes = path.join(__dirname, "codes");
-
-if (!fs.existsSync(dirCodes)) {
-  fs.mkdirSync(dirCodes, { recursive: true });
-}
-
 const generateFile = async (language, code) => {
-  const jobId = uuid();
-  let extension = "";
+  let extension;
   if (language === "cpp") {
     extension = ".cpp";
   } else if (language === "python") {
     extension = ".py";
-  } else if (language === "javascript") {
-    extension = ".js";
   } else if (language === "java") {
     extension = ".java";
+  } else if (language === "javascript") {
+    extension = ".js";
+  } else {
+    throw new Error("Unsupported language");
   }
 
+  const jobId = uuid();
   const filename = `${jobId}${extension}`;
-  const filepath = path.join(dirCodes, filename);
+  const codeDir = path.join(__dirname, "codes");
+  const filepath = path.join(codeDir, filename);
 
-  await fs.promises.writeFile(filepath, code);
-
-  return filepath;
+  try {
+    // Create codes directory if it doesn't exist
+    await fs.mkdir(codeDir, { recursive: true });
+    console.log("Created or verified codes directory:", codeDir);
+    await fs.writeFile(filepath, code);
+    console.log("Wrote file:", filepath);
+    return filepath;
+  } catch (err) {
+    console.error("Error in generateFile:", {
+      message: err.message,
+      stack: err.stack,
+    });
+    throw err;
+  }
 };
 
 module.exports = { generateFile };
